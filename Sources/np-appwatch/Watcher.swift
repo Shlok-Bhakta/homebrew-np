@@ -25,6 +25,20 @@ final class Watcher {
             self?.push()
         }
         link.onChange = { [weak self] in self?.onChange?() }
+        DistributedNotificationCenter.default().addObserver(forName: Alert.notification, object: nil, queue: .main) { [weak self] note in
+            guard let self, let kind = note.userInfo?["kind"] as? String, let alert = Alert(rawValue: kind) else { return }
+            buzz(alert, app: note.userInfo?["app"] as? String)
+        }
+        WatcherFile.claim()
+    }
+
+    /// An agent's news on the band (`np-appwatch notify`), unless you're already looking at it.
+    func buzz(_ alert: Alert, app: String?) {
+        let (go, why) = AlertGate.shouldBuzz(alert, app: app)
+        guard go else { return log("Not buzzing \(alert.rawValue): \(why)") }
+        link.send("buzz \(alert.rawValue)") { error in
+            log(error.map { "Couldn't buzz \(alert.rawValue): \($0.localizedDescription)" } ?? "Buzzed: \(alert.rawValue)")
+        }
     }
 
     /// What the dongle should hear: the front app's bundle id, or "" (no app) while paused.

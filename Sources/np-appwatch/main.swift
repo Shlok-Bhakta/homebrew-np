@@ -1,6 +1,6 @@
 import AppKit
 
-let version = "0.1.0"
+let version = "0.2.0"
 
 let usage = """
 np-appwatch \(version): switches the Neural Band dongle's gesture profile to match the app in front.
@@ -11,6 +11,11 @@ np-appwatch \(version): switches the Neural Band dongle's gesture profile to mat
   np-appwatch apps         Print the bundle ids of every running app
   np-appwatch send <id>    Tell the dongle once that <id> is in front ("" for no app), then exit
   np-appwatch status       Print the dongle's status (JSON), then exit
+  np-appwatch notify done|question|error [--app <id>]
+                           Buzz the band (skipped while app <id> is in front and in use)
+  np-appwatch copilot install|uninstall
+                           Buzz when GitHub Copilot finishes, asks something or fails (its hooks)
+  np-appwatch hook <event> What Copilot's hooks run (the event's JSON on stdin)
 """
 
 setvbuf(stdout, nil, _IOLBF, 0)
@@ -54,6 +59,19 @@ case "send" where arguments.count == 2:
             exit(0)
         }
     }
+case "notify" where arguments.count >= 2:
+    guard let alert = Alert(rawValue: arguments[1]) else {
+        FileHandle.standardError.write(Data("np-appwatch: notify done|question|error\n".utf8))
+        exit(64)
+    }
+    let app = arguments.firstIndex(of: "--app").flatMap { arguments.indices.contains($0 + 1) ? arguments[$0 + 1] : nil }
+    notify(alert, app: app)
+case "hook" where arguments.count == 2:
+    Copilot.hook(arguments[1])
+case "copilot" where arguments.count == 2 && arguments[1] == "install":
+    Copilot.install()
+case "copilot" where arguments.count == 2 && arguments[1] == "uninstall":
+    Copilot.uninstall()
 case "status":
     once { link in
         link.readStatus { text in

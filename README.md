@@ -52,6 +52,27 @@ np-appwatch front     # the app in front
 np-appwatch apps      # every running app
 ```
 
+## Buzz when Copilot needs you
+
+```sh
+np-appwatch copilot install
+```
+
+Then restart the GitHub Copilot app. Copilot's hooks run np-appwatch, and the band buzzes:
+
+| | Pattern | When |
+|---|---|---|
+| **Question** | two taps and a long one | the agent asks you something, or wants approval |
+| **Done** | two firm pulses | the agent finished its turn |
+| **Error** | one very long | something failed |
+
+No buzz while Copilot is in front and you've used the Mac in the last 30 s: you're already
+there. It installs a small Copilot plugin (`np-band`, with `copilot plugin install` when Copilot
+CLI is installed) and the same hooks as personal hooks for Copilot CLI. Each hook that fires is
+logged to `~/Library/Logs/np-appwatch/copilot-hooks.log`: watch it with `tail -f` to see what
+Copilot sends. Try the patterns with `np-appwatch notify question` (or `done`, `error`). Needs
+dongle firmware 0.13.0 or later. `np-appwatch copilot uninstall` removes it.
+
 ## Commands
 
 ```text
@@ -61,6 +82,8 @@ np-appwatch front        print the front app's bundle id
 np-appwatch apps         print every running app's bundle id
 np-appwatch send <id>    tell the dongle once that <id> is in front ("" for none)
 np-appwatch status       print the dongle's status JSON
+np-appwatch notify done|question|error [--app <id>]   buzz the band
+np-appwatch copilot install|uninstall                 Copilot's hooks
 ```
 
 Logs (when run by `brew services`): `$(brew --prefix)/var/log/np-appwatch.log`.
