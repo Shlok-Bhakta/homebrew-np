@@ -39,7 +39,7 @@ app edits):
 }
 ```
 
-- An app a profile lists comes to the front: the Mac switches to that profile (with its buzz).
+- An app a profile lists comes to the front: the Mac switches to that profile (quietly, no buzz).
 - Any other app: the Mac goes back to the profile it was in before.
 - Switching by hand (the letter menu, the app) sticks until the next listed app.
 - Pausing or quitting the helper puts the Mac back in its own profile.
