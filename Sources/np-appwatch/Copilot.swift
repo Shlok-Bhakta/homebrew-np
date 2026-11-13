@@ -31,6 +31,10 @@ enum Copilot {
         return URL(fileURLWithPath: CommandLine.arguments[0]).resolvingSymlinksInPath().path
     }
 
+    /// Tools an agent asks you something with (Copilot's is `ask_user`). Hook matchers must match
+    /// the whole name, so this is a full-name pattern.
+    static let askingTools = "ask_user|ask|Ask.*|.*[Qq]uestion.*|.*[Ee]licit.*"
+
     static var hooksJSON: String {
         func hook(_ event: String, matcher: String? = nil) -> String {
             let match = matcher.map { #", "matcher": "\#($0)""# } ?? ""
@@ -42,7 +46,7 @@ enum Copilot {
           "hooks": {
             "agentStop": \(hook("agentStop")),
             "notification": \(hook("notification")),
-            "preToolUse": \(hook("preToolUse", matcher: "ask|question|elicit")),
+            "preToolUse": \(hook("preToolUse", matcher: askingTools)),
             "errorOccurred": \(hook("errorOccurred"))
           }
         }
@@ -76,6 +80,7 @@ enum Copilot {
         print("Personal hooks (Copilot CLI): \(personalHooks.path)")
         print("Plugin: \(pluginDirectory.path)")
         if let copilot = findCopilot() {
+            _ = run(copilot, ["plugin", "uninstall", pluginName])  // an older copy, if any
             let status = run(copilot, ["plugin", "install", pluginDirectory.path])
             print(status == 0 ? "Installed the np-band plugin with \(copilot)." : "`copilot plugin install` failed (exit \(status)); see above.")
         } else {
@@ -100,6 +105,30 @@ enum Copilot {
         try? FileManager.default.removeItem(at: personalHooks)
         try? FileManager.default.removeItem(at: pluginDirectory)
         print("Removed the np-band hooks.")
+        exit(0)
+    }
+
+    /// `np-appwatch copilot check`: what's installed, and what Copilot has run lately.
+    static func check() -> Never {
+        func mark(_ ok: Bool) -> String { ok ? "yes" : "NO" }
+        let files = FileManager.default
+        print("np-appwatch \(version)")
+        print("Watcher running (holds the dongle link): \(mark(WatcherFile.running))")
+        print("Personal hooks (\(personalHooks.path)): \(mark(files.fileExists(atPath: personalHooks.path)))")
+        print("Plugin folder (\(pluginDirectory.path)): \(mark(files.fileExists(atPath: pluginDirectory.path)))")
+        if let copilot = findCopilot() {
+            print("Copilot CLI: \(copilot); its plugins:")
+            _ = run(copilot, ["plugin", "list"])
+        } else {
+            print("Copilot CLI: not found (the plugin is only installed if you added the folder in the app)")
+        }
+        let lines = ((try? String(contentsOf: logFile, encoding: .utf8)) ?? "").split(separator: "\n").suffix(15)
+        if lines.isEmpty {
+            print("\nNo hook has run yet: Copilot isn't running np-appwatch's hooks.")
+        } else {
+            print("\nThe last hooks Copilot ran (\(logFile.path)):")
+            for line in lines { print("  " + String(line.prefix(300))) }
+        }
         exit(0)
     }
 
@@ -144,7 +173,9 @@ enum Copilot {
             if ["permission_prompt", "elicitation_dialog"].contains(type) { return (.question, type) }
             return (nil, "notification \(type)")
         case "preToolUse", "PreToolUse":
-            let tool = field("toolName", "tool_name") as? String ?? "?"
+            // Checked here too: a host that ignores the matcher would otherwise buzz on every tool.
+            let tool = field("toolName", "tool_name") as? String ?? ""
+            guard tool.range(of: "^(?:\(askingTools))$", options: .regularExpression) != nil else { return (nil, "tool \(tool)") }
             return (.question, "it asks with \(tool)")
         case "errorOccurred", "ErrorOccurred":
             return (.error, "an error")

@@ -70,7 +70,8 @@ No buzz while Copilot is in front and you've used the Mac in the last 30 s: you'
 there. It installs a small Copilot plugin (`np-band`, with `copilot plugin install` when Copilot
 CLI is installed) and the same hooks as personal hooks for Copilot CLI. Each hook that fires is
 logged to `~/Library/Logs/np-appwatch/copilot-hooks.log`: watch it with `tail -f` to see what
-Copilot sends. Try the patterns with `np-appwatch notify question` (or `done`, `error`). Needs
+Copilot sends. Try the patterns with `np-appwatch notify question` (or `done`, `error`); `np-appwatch copilot
+check` shows what's installed and the last hooks that ran. Needs
 dongle firmware 0.13.0 or later. `np-appwatch copilot uninstall` removes it.
 
 ## Commands
@@ -83,7 +84,7 @@ np-appwatch apps         print every running app's bundle id
 np-appwatch send <id>    tell the dongle once that <id> is in front ("" for none)
 np-appwatch status       print the dongle's status JSON
 np-appwatch notify done|question|error [--app <id>]   buzz the band
-np-appwatch copilot install|uninstall                 Copilot's hooks
+np-appwatch copilot install|uninstall|check           Copilot's hooks (check: what's installed, what ran)
 ```
 
 Logs (when run by `brew services`): `$(brew --prefix)/var/log/np-appwatch.log`.
