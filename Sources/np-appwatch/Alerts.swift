@@ -18,17 +18,22 @@ enum AlertGate {
 
     static var lastSent: [Alert: Date] = [:]
 
-    static func shouldBuzz(_ alert: Alert, app: String?) -> (Bool, String) {
-        if let last = lastSent[alert], Date().timeIntervalSince(last) < repeatWithin { return (false, "a repeat") }
-        // A turn that asked a question also ends: the question's buzz says it all.
-        if alert == .done, let asked = lastSent[.question], Date().timeIntervalSince(asked) < repeatWithin { return (false, "the question's") }
+    /// Only hooks are held back as repeats: each buzz asked for by hand (`notify`) goes.
+    static func shouldBuzz(_ alert: Alert, app: String?, fromHook: Bool) -> (Bool, String) {
+        if fromHook {
+            if let last = lastSent[alert], Date().timeIntervalSince(last) < repeatWithin { return (false, "a repeat") }
+            // A turn that asked a question also ends: the question's buzz says it all.
+            if alert == .done, let asked = lastSent[.question], Date().timeIntervalSince(asked) < repeatWithin { return (false, "the question's") }
+        }
         if let app, NSWorkspace.shared.frontmostApplication?.bundleIdentifier == app {
             let idle = CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: CGEventType(rawValue: ~0)!)
             if idle < lookingWithin { return (false, "\(app) is in front and in use") }
         }
-        lastSent[alert] = Date()
+        if fromHook { lastSent[alert] = Date() }
         return (true, "")
     }
+
+    static func forget(_ alert: Alert) { lastSent[alert] = nil }
 }
 
 /// Where the running watcher leaves its process id, so `notify` knows it's there.
@@ -51,10 +56,11 @@ enum WatcherFile {
 
 /// `np-appwatch notify <kind> [--app <bundle id>]`: through the watcher, or straight to the dongle
 /// when it isn't running.
-func notify(_ alert: Alert, app: String?) -> Never {
+func notify(_ alert: Alert, app: String?, fromHook: Bool = false) -> Never {
     if WatcherFile.running {
         var info: [String: String] = ["kind": alert.rawValue]
         if let app { info["app"] = app }
+        if fromHook { info["hook"] = "1" }
         DistributedNotificationCenter.default().postNotificationName(Alert.notification, object: nil, userInfo: info, deliverImmediately: true)
         exit(0)
     }

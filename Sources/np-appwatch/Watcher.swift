@@ -27,16 +27,17 @@ final class Watcher {
         link.onChange = { [weak self] in self?.onChange?() }
         DistributedNotificationCenter.default().addObserver(forName: Alert.notification, object: nil, queue: .main) { [weak self] note in
             guard let self, let kind = note.userInfo?["kind"] as? String, let alert = Alert(rawValue: kind) else { return }
-            buzz(alert, app: note.userInfo?["app"] as? String)
+            buzz(alert, app: note.userInfo?["app"] as? String, fromHook: note.userInfo?["hook"] != nil)
         }
         WatcherFile.claim()
     }
 
     /// An agent's news on the band (`np-appwatch notify`), unless you're already looking at it.
-    func buzz(_ alert: Alert, app: String?) {
-        let (go, why) = AlertGate.shouldBuzz(alert, app: app)
+    func buzz(_ alert: Alert, app: String?, fromHook: Bool) {
+        let (go, why) = AlertGate.shouldBuzz(alert, app: app, fromHook: fromHook)
         guard go else { return log("Not buzzing \(alert.rawValue): \(why)") }
         link.send("buzz \(alert.rawValue)") { error in
+            if error != nil { AlertGate.forget(alert) }  // didn't reach the band: the next one may go
             log(error.map { "Couldn't buzz \(alert.rawValue): \($0.localizedDescription)" } ?? "Buzzed: \(alert.rawValue)")
         }
     }

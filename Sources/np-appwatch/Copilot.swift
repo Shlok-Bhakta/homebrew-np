@@ -158,7 +158,7 @@ enum Copilot {
         let (alert, why) = decide(event, payload)
         record(event: event, input: input, decision: alert.map { "\($0.rawValue) (\(why))" } ?? "no buzz (\(why))")
         guard let alert else { exit(0) }
-        notify(alert, app: Copilot.app)
+        notify(alert, app: Copilot.app, fromHook: true)
     }
 
     static func decide(_ event: String, _ payload: [String: Any]) -> (Alert?, String) {
