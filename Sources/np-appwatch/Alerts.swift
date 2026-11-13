@@ -13,27 +13,26 @@ enum Alert: String, CaseIterable {
 enum AlertGate {
     /// The app the alert is about is in front and the Mac was used this recently: you're on it.
     static let lookingWithin: TimeInterval = 30
-    /// The same kind again this soon is the same news (a plugin and personal hooks may both fire).
-    static let repeatWithin: TimeInterval = 4
+    /// How long an event is remembered: the plugin's and the personal hooks' copies of one event
+    /// both run, and it should buzz once. Different events buzz however close they come.
+    static let sameEventWithin: TimeInterval = 30
 
-    static var lastSent: [Alert: Date] = [:]
+    static var seen: [String: Date] = [:]
 
-    /// Only hooks are held back as repeats: each buzz asked for by hand (`notify`) goes.
-    static func shouldBuzz(_ alert: Alert, app: String?, fromHook: Bool) -> (Bool, String) {
-        if fromHook {
-            if let last = lastSent[alert], Date().timeIntervalSince(last) < repeatWithin { return (false, "a repeat") }
-            // A turn that asked a question also ends: the question's buzz says it all.
-            if alert == .done, let asked = lastSent[.question], Date().timeIntervalSince(asked) < repeatWithin { return (false, "the question's") }
-        }
+    /// `event`: what identifies the hook's event (nil for `notify` by hand, which always goes).
+    static func shouldBuzz(_ alert: Alert, app: String?, event: String?) -> (Bool, String) {
+        let now = Date()
+        seen = seen.filter { now.timeIntervalSince($0.value) < sameEventWithin }
+        if let event, seen[event] != nil { return (false, "the same event again (another copy of the hooks)") }
         if let app, NSWorkspace.shared.frontmostApplication?.bundleIdentifier == app {
             let idle = CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: CGEventType(rawValue: ~0)!)
             if idle < lookingWithin { return (false, "\(app) is in front and in use") }
         }
-        if fromHook { lastSent[alert] = Date() }
+        if let event { seen[event] = now }
         return (true, "")
     }
 
-    static func forget(_ alert: Alert) { lastSent[alert] = nil }
+    static func forget(_ event: String?) { if let event { seen[event] = nil } }
 }
 
 /// Where the running watcher leaves its process id, so `notify` knows it's there.
@@ -56,11 +55,11 @@ enum WatcherFile {
 
 /// `np-appwatch notify <kind> [--app <bundle id>]`: through the watcher, or straight to the dongle
 /// when it isn't running.
-func notify(_ alert: Alert, app: String?, fromHook: Bool = false) -> Never {
+func notify(_ alert: Alert, app: String?, event: String? = nil) -> Never {
     if WatcherFile.running {
         var info: [String: String] = ["kind": alert.rawValue]
         if let app { info["app"] = app }
-        if fromHook { info["hook"] = "1" }
+        if let event { info["event"] = event }
         DistributedNotificationCenter.default().postNotificationName(Alert.notification, object: nil, userInfo: info, deliverImmediately: true)
         exit(0)
     }

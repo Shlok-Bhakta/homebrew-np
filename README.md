@@ -67,7 +67,8 @@ Then restart the GitHub Copilot app. Copilot's hooks run np-appwatch, and the ba
 | **Error** | one very long | something failed |
 
 No buzz while Copilot is in front and you've used the Mac in the last 30 s: you're already
-there. It installs a small Copilot plugin (`np-band`, with `copilot plugin install` when Copilot
+there. Events that come close together (a question, then the turn ending) each buzz, one
+after another (dongle firmware 0.13.1 plays them in turn; 0.13.0 may blur them together). It installs a small Copilot plugin (`np-band`, with `copilot plugin install` when Copilot
 CLI is installed) and the same hooks as personal hooks for Copilot CLI. Each hook that fires is
 logged to `~/Library/Logs/np-appwatch/copilot-hooks.log`: watch it with `tail -f` to see what
 Copilot sends. Try the patterns with `np-appwatch notify question` (or `done`, `error`); `np-appwatch copilot

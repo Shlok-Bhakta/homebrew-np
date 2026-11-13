@@ -1,6 +1,6 @@
 import AppKit
 
-let version = "0.2.2"
+let version = "0.2.3"
 
 let usage = """
 np-appwatch \(version): switches the Neural Band dongle's gesture profile to match the app in front.

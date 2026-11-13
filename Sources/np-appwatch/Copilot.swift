@@ -158,7 +158,7 @@ enum Copilot {
         let (alert, why) = decide(event, payload)
         record(event: event, input: input, decision: alert.map { "\($0.rawValue) (\(why))" } ?? "no buzz (\(why))")
         guard let alert else { exit(0) }
-        notify(alert, app: Copilot.app, fromHook: true)
+        notify(alert, app: Copilot.app, event: fingerprint(event, input))
     }
 
     static func decide(_ event: String, _ payload: [String: Any]) -> (Alert?, String) {
@@ -221,6 +221,13 @@ enum Copilot {
             if let content = object["content"] { return strings(in: content) }
         }
         return []
+    }
+
+    /// The same for both copies of one event (they get the same JSON), different for any other.
+    static func fingerprint(_ event: String, _ input: Data) -> String {
+        var hash: UInt64 = 0xcbf2_9ce4_8422_2325  // FNV-1a
+        for byte in Data(event.utf8) + input { hash = (hash ^ UInt64(byte)) &* 0x100_0000_01b3 }
+        return String(hash, radix: 16)
     }
 
     private static func record(event: String, input: Data, decision: String) {
