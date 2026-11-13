@@ -1,8 +1,8 @@
 class NpAppwatch < Formula
   desc "Switches the NP Band Remote dongle's gesture profile with the app in front"
   homepage "https://github.com/Shlok-Bhakta/homebrew-np"
-  url "https://github.com/Shlok-Bhakta/homebrew-np/archive/refs/tags/v0.2.0.tar.gz"
-  sha256 "8bb7fbe9272d57e6b144b47c803a03746659b356553423b1e878eb17b61f952d"
+  url "https://github.com/Shlok-Bhakta/homebrew-np/archive/refs/tags/v0.2.1.tar.gz"
+  sha256 "c5e242965fff89165fb067a09182024b19f34f24e7a94cd5089e4a6d828fcdf8"
   license "MIT"
   head "https://github.com/Shlok-Bhakta/homebrew-np.git", branch: "main"
 
