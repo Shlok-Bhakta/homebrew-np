@@ -1,8 +1,8 @@
 class NpAppwatch < Formula
   desc "Switches the NP Band Remote dongle's gesture profile with the app in front"
   homepage "https://github.com/Shlok-Bhakta/homebrew-np"
-  url "https://github.com/Shlok-Bhakta/homebrew-np/archive/refs/tags/v0.1.0.tar.gz"
-  sha256 "614754ca0b690a46fd4d9ea2d12e745aa2c7d9d8bb90658ef7a4d0a62dfc5ac4"
+  url "https://github.com/Shlok-Bhakta/homebrew-np/archive/refs/tags/v0.2.0.tar.gz"
+  sha256 "8bb7fbe9272d57e6b144b47c803a03746659b356553423b1e878eb17b61f952d"
   license "MIT"
   head "https://github.com/Shlok-Bhakta/homebrew-np.git", branch: "main"
 
@@ -28,6 +28,8 @@ class NpAppwatch < Formula
       macOS asks once to let np-appwatch use Bluetooth: allow it.
       Profiles pick apps by bundle id ("apps" in the dongle's profile file); `np-appwatch front`
       prints the front app's.
+      To buzz the band when GitHub Copilot finishes, asks something or fails:
+        np-appwatch copilot install
     EOS
   end
 
